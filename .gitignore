@@ -131,7 +131,7 @@ dmypy.json
 # data
 data/curated/
 data/raw/
-data/tables/abs
+data/abs
 
 # OSX .DS_Store file
 .DS_Store
