@@ -31,7 +31,7 @@ def download_aurin_df(type_name, file_name):
         file_name: output file name 
     """
 
-    output_dir = '../data/abs'
+    output_dir = './data/abs'
     
     # check if directed folder exist
     if not os.path.exists(output_dir):
@@ -57,7 +57,7 @@ def download_url(url, file_name, file_extension):
         url: url of specified website
         filename: output file name
     '''
-    output_dir = '../data/abs'
+    output_dir = './data/abs'
     
     # check if directed folder exist
     if not os.path.exists(output_dir):
@@ -73,6 +73,7 @@ download_aurin_df('datasource-AU_Govt_ABS-UoM_AURIN_DB_3:abs_regional_population
 download_aurin_df('datasource-AU_Govt_ABS-UoM_AURIN_DB_GeoLevel:sa2_2016_aust', 'sa2_boundaries')
 download_aurin_df('datasource-AU_Govt_ABS-UoM_AURIN_DB_GeoLevel:poa_2016_aust', 'poa_boundaries')
 download_aurin_df('datasource-AU_Govt_ABS-UoM_AURIN_DB_3:abs_personal_income_total_income_distribution_sa2_2017_18', 'sa2_income')
+download_aurin_df('datasource-AU_Govt_ABS-UoM_AURIN_DB_3:abs_regional_population_age_sex_sa2_2019', 'sa2_age')
 
 # download from ABS data from download link
 download_url('https://www.abs.gov.au/AUSSTATS/subscriber.nsf/log?openagent&1270055006_CG_POSTCODE_2011_SA2_2011.zip&1270.0.55.006&Data%20Cubes&70A3CE8A2E6F9A6BCA257A29001979B2&0&July%202011&27.06.2012&Latest', 'poa_sa2_lookup', '.zip')
