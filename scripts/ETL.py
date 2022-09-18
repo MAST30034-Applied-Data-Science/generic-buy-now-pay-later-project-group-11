@@ -1,5 +1,5 @@
 # remove hash below to install package
-# !pip3 install owslib==0.25.0 fiona==1.8.21 geopandas==0.10.2 requests==2.28.0 folium==0.12.1
+#!pip3 install owslib==0.25.0 fiona==1.8.21 geopandas==0.10.2 requests==2.28.0 folium==0.12.1
 
 from owslib.wfs import WebFeatureService
 import geopandas
