@@ -85,9 +85,9 @@ df_trx = df_trx.withColumn("take_rate", F.col("take_rate").astype(FloatType()))
 df_trx = df_trx.withColumn("categories", clean_string(F.col("categories")))
 df_trx = df_trx.where(F.col("dollar_value") >= 35)
 
-fraud_data_merchant = spark.read.csv("./data/tables/merchant_fraud_probability.csv", header=True)
-fraud_trx = df_trx.where(F.col("order_datetime") < "2022-02-28").join(fraud_data_merchant, \
-    on=["merchant_abn", "order_datetime"], how="left")
+fraud_data_consumer = spark.read.csv("./data/tables/consumer_fraud_probability.csv", header=True)
+fraud_trx = df_trx.where(F.col("order_datetime") < "2022-02-28").join(fraud_data_consumer, \
+    on=["user_id", "order_datetime"], how="left")
 
 @F.udf(FloatType())
 def has_fraud(fraud):
@@ -97,7 +97,7 @@ def has_fraud(fraud):
         return 1.0
 
 fraud_trx = fraud_trx.withColumn("possible_fraud", has_fraud(F.col("fraud_probability")))
-fraud_trx = fraud_trx.select(["merchant_abn", "order_datetime", "possible_fraud"])
+fraud_trx = fraud_trx.select(["user_id", "order_datetime", "possible_fraud"])
 
 @F.udf(FloatType())
 def get_z(dollar, mean, sdev):
@@ -109,45 +109,34 @@ def get_z(dollar, mean, sdev):
     return abs(z)
 
 @F.udf(FloatType())
-def possible_fraud(mean_trx, z_score, count_trx):
-    count_threshold = (4402.9 * (1/np.sqrt(mean_trx))) - 94.5 - 26
-    z_threshold = (-0.00041 * mean_trx) + 10.6 - 1.26
-    
-    if z_score == None:
-        if mean_trx > 50000:
+def possible_fraud(mean_trx, z_score, first_time):
+    if first_time:
+        if mean_trx > 5000:
             return 1.0
         else:
             return 0.0
-    if mean_trx > 5000:
-        if z_score > z_threshold:
-            return 1.0
-        else:
-            return 0.0
+    if z_score > 15:
+        return 1.0
     else:
-        if count_trx > count_threshold:
-            return 1.0
-        else:
-            return 0.0
-
+        return 0.0
 
 df_third_dataset = df_trx.where(F.col("order_datetime") >= "2022-02-28")
-df_mean_sd = df_third_dataset.groupby("merchant_abn").agg(F.mean("dollar_value").alias("mean_trx"), \
+first_day_trx = df_trx.groupby("user_id").agg(F.min("order_datetime").alias("first_date"))
+
+df_mean_sd_consumer = df_third_dataset.groupby("user_id").agg(F.mean("dollar_value").alias("mean_trx"), \
     F.stddev("dollar_value").alias("stddev_trx"))
-df_grouped = df_third_dataset.groupby(["merchant_abn", "order_datetime"]).agg(F.sum("dollar_value").alias("sum_trx"), \
+df_daily_consumer = df_third_dataset.groupby(["user_id", "order_datetime"]).agg(F.sum("dollar_value").alias("sum_trx"), \
     F.count("dollar_value").alias("count_trx"))
-df_grouped = df_grouped.join(df_mean_sd, on="merchant_abn")
-df_grouped = df_grouped.withColumn("z_score", get_z(F.col("sum_trx"), F.col("mean_trx"), F.col("stddev_trx")))
-df_grouped = df_grouped.withColumn("possible_fraud", possible_fraud(F.col("mean_trx"), F.col("z_score"), F.col("count_trx")))
-df_grouped = df_grouped.select(["merchant_abn", "order_datetime", "possible_fraud"])
+df_daily_consumer = df_daily_consumer.join(df_mean_sd_consumer, on="user_id")
+df_daily_consumer = df_daily_consumer.withColumn("z_score", get_z(F.col("sum_trx"), F.col("mean_trx"), F.col("stddev_trx")))
+df_daily_consumer = df_daily_consumer.join(first_day_trx, on="user_id")
+df_daily_consumer = df_daily_consumer.withColumn("first_time", (F.col("order_datetime") == F.col("first_date")))
+df_daily_consumer = df_daily_consumer.withColumn("possible_fraud", possible_fraud(F.col("mean_trx"), F.col("z_score"), F.col("first_time")))
+df_daily_consumer = df_daily_consumer.select(["user_id", "order_datetime", "possible_fraud"])
 
-df_grouped = df_grouped.union(fraud_trx)
-
-df_grouped = df_grouped.withColumn("month", F.month(F.col("order_datetime")))
-df_grouped = df_grouped.groupby(["merchant_abn", "month"]).agg(F.mean("possible_fraud").alias("possible_fraud_proportion"))
-
-
-df_grouped.write.csv("./data/curated/fraud_merchant", header=True, mode="overwrite")
+df_daily_consumer = df_daily_consumer.union(fraud_trx)
+df_daily_consumer = df_daily_consumer.withColumn("month", F.month(F.col("order_datetime")))
+df_daily_consumer = df_daily_consumer.groupby(["user_id", "month"]).agg(F.mean("possible_fraud").alias("possible_fraud_proportion"))
 
 
-
-#NEED TO KNOW REQUIREMENTS
+df_daily_consumer.write.csv("./data/curated/fraud_consumer", header=True, mode="overwrite")
