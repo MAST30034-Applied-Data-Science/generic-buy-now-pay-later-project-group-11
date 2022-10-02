@@ -18,7 +18,7 @@ from pyspark.sql.types import (
     StructField,
     StructType,
     FloatType,
-    BooleanType
+    BooleanType,
 )
 
 import warnings
@@ -36,9 +36,8 @@ spark = (
 )
 
 # load all transactions datasets
-paths=['./data/tables/transactions_20210228_20210827_snapshot',
-       './data/tables/transactions_20210828_20220227_snapshot',
-       './data/tables/transactions_20220228_20220828_snapshot']
+paths=['../data/tables/transactions_20210228_20210827_snapshot',
+       '../data/tables/transactions_20210828_20220227_snapshot']
 
 first = 1
 for path in paths:
@@ -51,9 +50,9 @@ for path in paths:
         transactions = transactions.union(append_transactions)
         print(f'added {path.split("/")[3]}')
 
-consumer = spark.read.csv("./data/tables/tbl_consumer.csv", header=True, sep="|")
-details = spark.read.parquet("./data/tables/consumer_user_details.parquet")
-merchants = spark.read.parquet("./data/tables/tbl_merchants.parquet")
+consumer = spark.read.csv("../data/tables/tbl_consumer.csv", header=True, sep="|")
+details = spark.read.parquet("../data/tables/consumer_user_details.parquet")
+merchants = spark.read.parquet("../data/tables/tbl_merchants.parquet")
 
 # rename columns
 merchants = merchants.withColumnRenamed('name', 'merchant_name')
@@ -85,6 +84,19 @@ df_trx = df_trx.withColumn("take_rate", F.col("take_rate").astype(FloatType()))
 df_trx = df_trx.withColumn("categories", clean_string(F.col("categories")))
 df_trx = df_trx.where(F.col("dollar_value") >= 35)
 
+fraud_data_merchant = spark.read.csv("../data/tables/merchant_fraud_probability.csv", header=True)
+fraud_trx = df_trx.join(fraud_data_merchant, on=["merchant_abn", "order_datetime"], how="left")
+
+@F.udf(FloatType())
+def has_fraud(fraud):
+    if fraud == None:
+        return 0.0
+    else:
+        return 1.0
+
+fraud_trx = fraud_trx.withColumn("possible_fraud", has_fraud(F.col("fraud_probability")))
+fraud_trx = fraud_trx.select(["merchant_abn", "order_datetime", "possible_fraud"])
+
 @F.udf(FloatType())
 def get_z(dollar, mean, sdev):
     if sdev == 0.0:
@@ -94,24 +106,48 @@ def get_z(dollar, mean, sdev):
     z = (dollar - mean) / sdev
     return abs(z)
 
-@F.udf(BooleanType())
+@F.udf(FloatType())
 def possible_fraud(mean_trx, z_score, count_trx):
-    if mean_trx > ("ENTER THRESHOLD HERE"):
-        if z_score > ("ENTER THRESHOLD HERE"):
-            pass
+    count_threshold = (4402.9 * (1/np.sqrt(mean_trx))) - 94.5 - 26
+    z_threshold = (-0.00041 * mean_trx) + 10.6 - 1.26
+    
+    if z_score == None:
+        if mean_trx > 50000:
+            return 1.0
+        else:
+            return 0.0
+    if mean_trx > 5000:
+        if z_score > z_threshold:
+            return 1.0
+        else:
+            return 0.0
     else:
-        if count_trx > ("ENTER THRESHOLD HERE"):
-            pass
+        if count_trx > count_threshold:
+            return 1.0
+        else:
+            return 0.0
 
-df_mean_sd = df_trx.groupby("merchant_abn").agg(F.mean("dollar_value").alias("mean_trx"), \
+
+df_third_dataset = df_trx.where(F.col("order_datetime") >= "2022-02-28")
+df_mean_sd = df_third_dataset.groupby("merchant_abn").agg(F.mean("dollar_value").alias("mean_trx"), \
     F.stddev("dollar_value").alias("stddev_trx"))
-df_grouped = df_trx.groupby(["merchant_abn", "order_datetime"]).agg(F.sum("dollar_value").alias("sum_trx"), \
+df_grouped = df_third_dataset.groupby(["merchant_abn", "order_datetime"]).agg(F.sum("dollar_value").alias("sum_trx"), \
     F.count("dollar_value").alias("count_trx"))
 df_grouped = df_grouped.join(df_mean_sd, on="merchant_abn")
 df_grouped = df_grouped.withColumn("z_score", get_z(F.col("sum_trx"), F.col("mean_trx"), F.col("stddev_trx")))
 df_grouped = df_grouped.withColumn("possible_fraud", possible_fraud(F.col("mean_trx"), F.col("z_score"), F.col("count_trx")))
+df_grouped = df_grouped.select(["merchant_abn", "order_datetime", "possible_fraud"])
 
-df_trx = df_trx.join(df_grouped, on=["merchant_abn", "order_datetime"], how="left")
+df_grouped = df_grouped.union(fraud_trx)
+
+df_grouped = df_grouped.withColumn("month", F.month(F.col("order_datetime")))
+df_grouped = (df_grouped.withColumn("order_year_month", 
+                                    date_format(col("order_datetime"), 'yyyy-MM')
+                                    .alias("yyyy-MM")))
+# df_grouped = df_grouped.groupby(["merchant_abn", "month"]).agg(F.mean("possible_fraud").alias("possible_fraud_proportion"))
+
+
+df_grouped.write.parquet("../data/curated/fraud_merchant_train.parquet", mode="overwrite")
 
 
 
