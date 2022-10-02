@@ -136,3 +136,4 @@ data/tables/abs
 
 # OSX .DS_Store file
 .DS_Store
+*.png

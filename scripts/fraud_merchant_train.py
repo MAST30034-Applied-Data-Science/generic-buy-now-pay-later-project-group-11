@@ -36,9 +36,8 @@ spark = (
 )
 
 # load all transactions datasets
-paths=['./data/tables/transactions_20210228_20210827_snapshot',
-       './data/tables/transactions_20210828_20220227_snapshot',
-       './data/tables/transactions_20220228_20220828_snapshot']
+paths=['../data/tables/transactions_20210228_20210827_snapshot',
+       '../data/tables/transactions_20210828_20220227_snapshot']
 
 first = 1
 for path in paths:
@@ -51,9 +50,9 @@ for path in paths:
         transactions = transactions.union(append_transactions)
         print(f'added {path.split("/")[3]}')
 
-consumer = spark.read.csv("./data/tables/tbl_consumer.csv", header=True, sep="|")
-details = spark.read.parquet("./data/tables/consumer_user_details.parquet")
-merchants = spark.read.parquet("./data/tables/tbl_merchants.parquet")
+consumer = spark.read.csv("../data/tables/tbl_consumer.csv", header=True, sep="|")
+details = spark.read.parquet("../data/tables/consumer_user_details.parquet")
+merchants = spark.read.parquet("../data/tables/tbl_merchants.parquet")
 
 # rename columns
 merchants = merchants.withColumnRenamed('name', 'merchant_name')
@@ -85,9 +84,8 @@ df_trx = df_trx.withColumn("take_rate", F.col("take_rate").astype(FloatType()))
 df_trx = df_trx.withColumn("categories", clean_string(F.col("categories")))
 df_trx = df_trx.where(F.col("dollar_value") >= 35)
 
-fraud_data_merchant = spark.read.csv("./data/tables/merchant_fraud_probability.csv", header=True)
-fraud_trx = df_trx.where(F.col("order_datetime") < "2022-02-28").join(fraud_data_merchant, \
-    on=["merchant_abn", "order_datetime"], how="left")
+fraud_data_merchant = spark.read.csv("../data/tables/merchant_fraud_probability.csv", header=True)
+fraud_trx = df_trx.join(fraud_data_merchant, on=["merchant_abn", "order_datetime"], how="left")
 
 @F.udf(FloatType())
 def has_fraud(fraud):
@@ -143,10 +141,13 @@ df_grouped = df_grouped.select(["merchant_abn", "order_datetime", "possible_frau
 df_grouped = df_grouped.union(fraud_trx)
 
 df_grouped = df_grouped.withColumn("month", F.month(F.col("order_datetime")))
-df_grouped = df_grouped.groupby(["merchant_abn", "month"]).agg(F.mean("possible_fraud").alias("possible_fraud_proportion"))
+df_grouped = (df_grouped.withColumn("order_year_month", 
+                                    date_format(col("order_datetime"), 'yyyy-MM')
+                                    .alias("yyyy-MM")))
+# df_grouped = df_grouped.groupby(["merchant_abn", "month"]).agg(F.mean("possible_fraud").alias("possible_fraud_proportion"))
 
 
-df_grouped.write.csv("./data/curated/fraud_merchant", header=True, mode="overwrite")
+df_grouped.write.parquet("../data/curated/fraud_merchant_train.parquet", mode="overwrite")
 
 
 
