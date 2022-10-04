@@ -4,6 +4,26 @@ import numpy as np
 import pyspark.sql.functions as func
 from pyspark.sql.functions import sum, avg, count, lag, date_sub, split
 from pyspark.sql.window import Window
+import geopandas as gpd
+from datetime import datetime
+
+from pyspark.sql import SparkSession, Window, functions as F
+from pyspark.sql.functions import countDistinct, col, date_format
+import numpy as np
+import pyspark.sql.functions as func
+from pyspark.sql.functions import sum, avg, count, lag, date_sub, split
+from pyspark.sql.window import Window
+from pyspark.sql.types import (
+    StringType,
+    LongType,
+    DoubleType,
+    StructField,
+    StructType,
+    FloatType
+)
+
+import warnings
+warnings.filterwarnings("ignore")
 
 # Start Spark Session
 spark = (
@@ -34,9 +54,6 @@ for path in paths:
 
 test_path = '../data/tables/transactions_20220228_20220828_snapshot'
 test_trx = spark.read.parquet(test_path)
-
-age = gpd.read_file("../data/abs/sa2_age.gml")
-income = gpd.read_file("../data/abs/sa2_income.gml")
 
 # load poa_to_sa2 dataset
 poa_to_sa2 = spark.read.csv("../data/curated/poa_w_sa2.csv", header=True)
@@ -138,52 +155,12 @@ df_trx_sa2_test = df_trx_sa2_test.withColumn("revenue", get_revenue(F.col("take_
 df_trx_sa2 = df_trx_sa2.drop('tags')
 df_trx_sa2_test = df_trx_sa2_test.drop('tags')
 
-# calculate population of age above 20
 
-
-def get_age_pop(age_start, age_end):
-    '''
-    Create new columns that sum the age population that is in the range of
-    age_start and age_end from the age dataframe.
-    '''
-    
-    left_age = age_start
-    right_age = left_age + 4
-    
-    age[f'males_age_{age_start}_{age_end}'] = age[f'males_age_{left_age}_{right_age}']
-    age[f'females_age_{age_start}_{age_end}'] = age[f'females_age_{left_age}_{right_age}']
-    
-    while right_age < age_end + 1:
-        left_age += 5
-        right_age += 5
-        
-        age[f'males_age_{age_start}_{age_end}'] += age[f'males_age_{left_age}_{right_age}']
-        age[f'females_age_{age_start}_{age_end}'] += age[f'females_age_{left_age}_{right_age}']
-    
-    return age
-        
-    
-age = get_age_pop(20, 44)
-age = get_age_pop(45, 60)
-
-age = age[['sa2_main16', 'males_age_20_44', 'females_age_20_44', 
-           'males_age_45_60', 'females_age_45_60']]
-
-# change age gpd dataframe to sdf
-age_sdf = spark.createDataFrame(age)
-
-# change income gpd dataframe to sdf
-cols = ['sa2_code', 'median_age_of_earners_years', 'median_aud', 
-        'gini_coefficient_coef']
-income_sdf = spark.createDataFrame(income[cols])
-
-# create new column 'yyyy-mmm' from order datetime
-df_trx_sa2 = (df_trx_sa2.withColumn("order_year_month", 
-                                date_format(col("order_datetime"), 'yyyy-MM')))
-df_trx_sa2_test = (df_trx_sa2_test.withColumn("order_year_month", 
-                                date_format(col("order_datetime"), 'yyyy-MM')))
 
 # remove fraud_probability above 5 from transaction
+fraud_data_consumer = spark.read.csv("../data/tables/consumer_fraud_probability.csv", header=True)
+fraud_data_merchant = spark.read.csv("../data/tables/merchant_fraud_probability.csv", header=True)
+
 fraud_data_merchant = fraud_data_merchant.filter(F.col('fraud_probability') > 5)
 fraud_data_consumer = fraud_data_consumer.filter(F.col('fraud_probability') > 5)
 
@@ -197,8 +174,14 @@ df_trx_sa2.createOrReplaceTempView("NOMERFRAUD")
 
 df_trx_sa2 = spark.sql("SELECT a.* FROM NOMERFRAUD a LEFT ANTI JOIN CONFRAUD b ON a.user_id == b.user_id AND a.order_datetime == b.order_datetime")
 
+# drop not needed columns in future processes
+cols = ("user_id", "consumer_name", "address", "gender", "sa2_name_2016",
+        "state", "geometry", "postcode", "merchant_name")
+df_trx_sa2_test = df_trx_sa2_test.drop(*cols)
+df_trx_sa2 = df_trx_sa2.drop(*cols)
 
-# save final sdf to curated data folder
-df_trx_sa2.write.parquet("../data/curated/df_train_transaction.parquet", mode="overwrite")
-df_trx_sa2_test.write.parquet("../data/curated/df_test_transaction.parquet", mode="overwrite")
 
+df_trx_sa2.write.parquet("../data/curated/df_trx_sa2.parquet", mode="overwrite")
+print("Successfully save df_trx_sa2")
+df_trx_sa2_test.write.parquet("../data/curated/df_trx_sa2_test.parquet", mode="overwrite")
+print("Successfully save df_trx_sa2_test")
