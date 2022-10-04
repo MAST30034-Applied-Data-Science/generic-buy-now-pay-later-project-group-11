@@ -23,8 +23,9 @@ To run the pipeline, please visit the project directory and run the files in ord
 2. `notebook\poa_to_sa2.ipynb`: Creates lookup dataframe that can translate postcodes to SA2.
 3. `scripts\ETL.py`: This consolidates and transforms BNPL and external datasets into one dataframe and saves into `data/curated` directory.
 4. `notebook\outlier_detection_removal.ipynb`: Detects and removes outliers by product categories and updates the dataframe from ETL.py.
-5. `notebook\feature_engineering.ipynb`: Transforms new variables, utilizing data from external and internal datasets. Saves output files to `data/curated`.
-6. `notebook\model.ipynb`: Rank top 10 merchants from each specified merchant segments and Top 100 overall. Saves output files to `data/curated`.
+5. `scripts\fraud.py`: Remove fraudulent transaction data on certain threshold, and save output in `data/curated` directory.
+6. `notebook\feature_engineering.ipynb`: Transforms new variables, utilizing data from external and internal datasets. Saves output files to `data/curated`.
+7. `notebook\model.ipynb`: Rank top 10 merchants from each specified merchant segments and Top 100 overall. Saves output files to `data/curated`.
 
 ## Directory
 - `.github`: Contains Github Classroom Feedback (rendered at initialising Github repository).
