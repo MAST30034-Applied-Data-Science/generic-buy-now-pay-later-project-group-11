@@ -156,26 +156,8 @@ df_trx_sa2 = df_trx_sa2.drop('tags')
 df_trx_sa2_test = df_trx_sa2_test.drop('tags')
 
 
-
-# remove fraud_probability above 5 from transaction
-fraud_data_consumer = spark.read.csv("../data/tables/consumer_fraud_probability.csv", header=True)
-fraud_data_merchant = spark.read.csv("../data/tables/merchant_fraud_probability.csv", header=True)
-
-fraud_data_merchant = fraud_data_merchant.filter(F.col('fraud_probability') > 5)
-fraud_data_consumer = fraud_data_consumer.filter(F.col('fraud_probability') > 5)
-
-df_trx_sa2.createOrReplaceTempView("TRX")
-fraud_data_merchant.createOrReplaceTempView("MERFRAUD")
-fraud_data_consumer.createOrReplaceTempView("CONFRAUD")
-
-df_trx_sa2 = spark.sql("SELECT a.* FROM TRX a LEFT ANTI JOIN MERFRAUD b ON a.merchant_abn == b.merchant_abn AND a.order_datetime == b.order_datetime")
-
-df_trx_sa2.createOrReplaceTempView("NOMERFRAUD")
-
-df_trx_sa2 = spark.sql("SELECT a.* FROM NOMERFRAUD a LEFT ANTI JOIN CONFRAUD b ON a.user_id == b.user_id AND a.order_datetime == b.order_datetime")
-
 # drop not needed columns in future processes
-cols = ("user_id", "consumer_name", "address", "gender", "sa2_name_2016",
+cols = ("consumer_name", "address", "gender", "sa2_name_2016",
         "state", "geometry", "postcode", "merchant_name")
 df_trx_sa2_test = df_trx_sa2_test.drop(*cols)
 df_trx_sa2 = df_trx_sa2.drop(*cols)
