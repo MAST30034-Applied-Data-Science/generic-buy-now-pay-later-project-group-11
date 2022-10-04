@@ -20,10 +20,11 @@ Datasets used here.
 ## Guide
 To run the pipeline, please visit the project directory and run the files in order:
 1. `scripts\download.py`: This downloads the external datasets into the `data/abs` directory.
-2. `scripts\ETL.py`: This consolidates and transforms BNPL and external datasets into one dataframe and saves into `data/curated` directory.
-3. `notebook\outlier_detection_removal.ipynb`: Detects and removes outliers by product categories and updates the dataframe from ETL.py.
-4. `notebook\feature_engineering.ipynb`: Transforms new variables, utilizing data from external and internal datasets. Saves output files to `data/curated`.
-4. `notebook\model.ipynb`: Rank top 10 merchants from each specified merchant segments and Top 100 overall. Saves output files to `data/curated`.
+2. `notebook\poa_to_sa2.ipynb`: Creates lookup dataframe that can translate postcodes to SA2.
+3. `scripts\ETL.py`: This consolidates and transforms BNPL and external datasets into one dataframe and saves into `data/curated` directory.
+4. `notebook\outlier_detection_removal.ipynb`: Detects and removes outliers by product categories and updates the dataframe from ETL.py.
+5. `notebook\feature_engineering.ipynb`: Transforms new variables, utilizing data from external and internal datasets. Saves output files to `data/curated`.
+6. `notebook\model.ipynb`: Rank top 10 merchants from each specified merchant segments and Top 100 overall. Saves output files to `data/curated`.
 
 ## Directory
 - `.github`: Contains Github Classroom Feedback (rendered at initialising Github repository).
