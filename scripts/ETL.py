@@ -157,7 +157,7 @@ df_trx_sa2_test = df_trx_sa2_test.drop('tags')
 
 
 # drop not needed columns in future processes
-cols = ("consumer_name", "address", "gender", "sa2_name_2016",
+cols = ("consumer_name", "address", "sa2_name_2016",
         "state", "geometry", "postcode", "merchant_name")
 df_trx_sa2_test = df_trx_sa2_test.drop(*cols)
 df_trx_sa2 = df_trx_sa2.drop(*cols)
