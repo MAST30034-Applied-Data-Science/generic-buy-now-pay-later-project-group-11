@@ -9,10 +9,12 @@ import zipfile
 import pandas as pd
 import os
 from urllib.request import urlretrieve
+from dotenv import load_dotenv
 
 # User credential to connect with API
-WFS_USERNAME = 'ilcag'
-WFS_PASSWORD= 'NCpx3cztUjshvRDb'
+load_dotenv()
+WFS_USERNAME = os.getenv('WFS_USERNAME')
+WFS_PASSWORD= os.getenv('WFS_PASSWORD')
 WFS_URL='https://adp.aurin.org.au/geoserver/wfs'
 
 # Connect with AURIN API
@@ -31,7 +33,7 @@ def download_aurin_df(type_name, file_name):
         file_name: output file name 
     """
 
-    output_dir = '../data/abs'
+    output_dir = './data/abs'
     
     # check if directed folder exist
     if not os.path.exists(output_dir):
@@ -57,7 +59,7 @@ def download_url(url, file_name, file_extension):
         url: url of specified website
         filename: output file name
     '''
-    output_dir = '../data/abs'
+    output_dir = './data/abs'
     
     # check if directed folder exist
     if not os.path.exists(output_dir):
