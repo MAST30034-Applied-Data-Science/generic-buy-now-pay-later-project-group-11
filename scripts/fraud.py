@@ -59,7 +59,7 @@ df_trx_sa2 = spark.sql("SELECT a.* FROM NOMERFRAUD a LEFT ANTI JOIN CONFRAUD b O
 
 print("Dataframe size after:", df_trx_sa2.count())
 
-df_trx_sa2.write.parquet("../data/curated/fin_df_trx_sa2.parquet", mode="overwrite")
+df_trx_sa2.write.parquet("./data/curated/fin_df_trx_sa2.parquet", mode="overwrite")
 print("Successfully save fin_df_trx_sa2")
-df_trx_sa2_test.write.parquet("../data/curated/fin_df_trx_sa2_test.parquet", mode="overwrite")
+df_trx_sa2_test.write.parquet("./data/curated/fin_df_trx_sa2_test.parquet", mode="overwrite")
 print("Successfully save fin_df_trx_sa2_test")
