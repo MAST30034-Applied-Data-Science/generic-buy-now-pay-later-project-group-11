@@ -8,14 +8,27 @@
 - Roseline
 
 ## Introduction
-Project description here.
+Merchants are looking to boost their customer base by forming a partnership with this firm and in return, the BNPL firm gets a small percentage of revenue (take rate) to cover operating costs. However, the BNPL firm can only onboard at most 100 number of merchants every year due to limited resources. 
+
+This model will define the top 100 best merchants for the BNPL platform by predicting its revenue contribution for the next 6 months. Additionally, decide what features and heuristics greatly separate merchants that should and should not be selected?
 
 ## Datasets
-Datasets used here.
+BNPL Platform Dataset:
+- Daily Transaction (2021-02-28 to 2022-08-28)
+- Consumer/Merchant Fraud Probability
+- Consumer Details
+- Merchant Details
+
+External Dataset: 
+- 2016 Age population by SA2, 
+- 2016 Income by SA2, 
+- 2016 Postcode boundaries,
+- 2016 SA2 boundaries, 
+- 2011 Postcode to SA2.
 
 ## Dependencies
-- **Language:**
-- **Packages/Libraries:**
+- Python 3.9.7
+- Available in requirements.txt
 
 ## Guide
 To run the pipeline, please visit the project directory and follow the following steps in order:
