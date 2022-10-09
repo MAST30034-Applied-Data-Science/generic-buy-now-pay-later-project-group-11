@@ -19,7 +19,7 @@ Datasets used here.
 
 ## Guide
 To run the pipeline, please visit the project directory and follow the following steps in order:
-1. Get the credentials needed in order to access the AURIN API through this website: {insert website here}
+1. Get the credentials needed in order to access the AURIN API through this website: https://adp-access.aurin.org.au/data-provider
 2. Create a `.env` file and write the following details in the file:
 
     `WFS_USERNAME={Insert Username Here}`
