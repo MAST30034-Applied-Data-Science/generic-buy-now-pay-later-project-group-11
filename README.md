@@ -20,7 +20,7 @@ BNPL Platform Dataset:
 - Merchant Details
 
 External Dataset: 
-- 2016 Age population by SA2, 
+- 2021 Age population by SA2, 
 - 2016 Income by SA2, 
 - 2016 Postcode boundaries,
 - 2016 SA2 boundaries, 
@@ -28,7 +28,7 @@ External Dataset:
 
 ## Dependencies
 - Python 3.9.7
-- Available in requirements.txt
+- Required Libraries available in requirements.txt
 
 ## Guide
 To run the pipeline, please visit the project directory and follow the following steps in order:
@@ -45,6 +45,12 @@ To run the pipeline, please visit the project directory and follow the following
 7. Run `scripts\fraud.py`: Remove fraudulent transaction data on certain threshold, and save output in `data/curated` directory.
 8. Run `notebook\feature_engineering.ipynb`: Transforms new variables, utilizing data from external and internal datasets. Saves output files to `data/curated`.
 9. Run `models\model.ipynb`: Rank top 10 merchants from each specified merchant segments and top 100 overall. Saves output files to `data/curated`.
+
+To read the two analysis performed, please visit these directories:
+- Fraud analysis `notebook\fraud_analysis.ipynb`.
+- Tag and geospatial visualization analysis `notebook\tag_and_geospatial_analysis.ipynb`.
+
+To read the summary of the whole project, please visit `notebook\summary_notebook.ipynb`.
 
 ## Directory
 - `.github`: Contains Github Classroom Feedback (rendered at initialising Github repository).
