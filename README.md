@@ -40,7 +40,7 @@ To run the pipeline, please visit the project directory and follow the following
     `WFS_PASSWORD={Insert Password Here}`
 3. Run `scripts\download.py`: This downloads the external datasets into the `data/abs` directory.
 
--- Alternatively --
+### -- Alternatively --
 For marking purpose, external datasets can be downloaded through this link: https://mega.nz/folder/bzx02ThK#lQxd0ZsDLEhd9Zbqj9D7gA. The 11 files should be saved into the `data/abs` directory. Create `data/abs` folder when folder is not present. (If this step is to be performed, skip step 1 - 3)
 
 4. Run `notebook\poa_to_sa2.ipynb`: Creates lookup dataframe that can translate postcodes to SA2.
